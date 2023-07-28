@@ -31,16 +31,37 @@ def generator(d):
         except:
             continue
 
-        messages.append({"role": "user", "content": "From the sentiments and aspects discussed in the reviews, what are the key strengths and weaknesses of this paper? Please cite corresponding reviewers and evidence" + st})
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=messages,
+            prompt= "you are opinionbot and metareviewer for major conference. I will give you a review and you will generate me 5 opinions within that review and also tell me the sentiment, aspect and evidence for that opinion in the review - "  + st,
             temperature=0.7,
-            max_tokens=100,
+            max_tokens= 300,
         )
+        ini_sent += response.choices[0].text
 
-        messages.append({"role": "assistant", "content": response.choices[0].message['content']})
+    response_adv = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            prompt= "According to the above opinions from these given reviews, what are the most important advantages and disadvantages of this paper? Please list corresponding reviewers and evidence"  + ini_sent,
+            temperature=0.7,
+            max_tokens= 300,
+    )
+    response_contro = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            prompt= "List the consensus and controversy in the given opinions. Please include the corresponding reviewers and evidence."  + ini_sent,
+            temperature=0.7,
+            max_tokens= 300,
+    )
+    discussion = response_adv.choices[0].text + response_contro.choices[0].text
+    pre_ite_mr = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            prompt= "Based on the above discussion, write a metareview given a decision of acceptance/rejection"  + discussion,
+            temperature=0.7,
+            max_tokens= 300,
+    )
+    metarev = pre_ite_mr.choices[0].text
 
+    messages = messages +[{"role": "user", "content": "Initial Metareview generated:" + metarev}]
+    
     response_adv = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=messages + [{"role": "user", "content": "Identify the points of agreement and disagreement among the reviewers. Please include the corresponding reviewers and evidence."}],
@@ -81,7 +102,7 @@ def generator(d):
 
     response_mrt = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=messages + [{"role": "user", "content": "Are the most important advantages and disadvantages discussed in the above meta-review? Are the most important consensus and controversy discussed in the above meta-review? Is the above meta-review contradicting reviewers' comments? Is the above meta-review supporting the rejection decision? If not, how can it be improved?"}],
+        messages=messages + [{"role": "user", "content": "Are the most important advantages and disadvantages discussed in the above meta-review? If not, how can it be improved?"}],
         temperature=0.7,
         max_tokens=150,
     )
@@ -93,8 +114,52 @@ def generator(d):
         max_tokens=200,
     )
 
+        response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "Are the most important consensus and controversy discussed in the above meta-review? If not, how can it be improved?"}],
+        temperature=0.7,
+        max_tokens=150,
+    )
+
+    response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "using this discussion, write an accurate <200 words metareview with decision of acceptance/rejection."}],
+        temperature=0.7,
+        max_tokens=200,
+    )
+
+    
+    response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "Is the above meta-review contradicting reviewers' comments? If not, how can it be improved?"}],
+        temperature=0.7,
+        max_tokens=150,
+    )
+
+    response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "using this discussion, write an accurate <200 words metareview with decision of acceptance/rejection."}],
+        temperature=0.7,
+        max_tokens=200,
+    )
+
+    response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "Is the above meta-review supporting the rejection decision?  If not, how can it be improved?"}],
+        temperature=0.7,
+        max_tokens=150,
+    )
+
+    response_mrt = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages + [{"role": "user", "content": "using this discussion, write an accurate <200 words metareview with decision of acceptance/rejection."}],
+        temperature=0.7,
+        max_tokens=200,
+    )
     discussion = response_mrt.choices[0].message['content']
     disc2.append(discussion)
+
+#other iterations shown below 
 
     response_mrt = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
